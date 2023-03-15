@@ -24,16 +24,16 @@ services:
   prometheus:
     image: prom/prometheus:latest
     volumes:
-      - ~/source/repos/mars_rover2/src/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ~/source/repos/ExistingProject1/src/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - 9090:9090
 
   grafana:
     image: grafana/grafana:latest
     volumes:
-     - ~/source/repos/mars_rover2/src/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yaml
+     - ~/source/repos/ExistingProject1/src/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yaml
     ports:
-     - 3000:3000
+     - 3001:3000
     links:
       - prometheus
 

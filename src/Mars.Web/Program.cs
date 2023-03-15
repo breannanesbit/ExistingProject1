@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Prometheus;
 using Serilog;
 using Serilog.Exceptions;
 using System.Reflection;
@@ -74,14 +75,18 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
+//_____________________________________________________________
+builder.Services.AddSingleton<MetricReporter>();
+builder.Services.AddControllers();
+
+
+//--------------------------------------------------------------
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
-}
-
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -91,6 +96,15 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mars Rover v1");
 });
+}
+//_________________________________________________________
+app.UseMetricServer();
+app.UseHttpMetrics();
+app.UseMiddleware<ResponseMetricMiddleware>();
+
+//app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+
+//_________________________________________________________
 
 app.MapBlazorHub()
    .DisableRateLimiting();
