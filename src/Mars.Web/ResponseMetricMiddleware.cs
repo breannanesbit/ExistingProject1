@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿using Metric;
+using Prometheus;
+using Prometheus.HttpClientMetrics;
+using System.Diagnostics;
 
 namespace Mars.Web
 {
@@ -13,6 +16,10 @@ namespace Mars.Web
 
         public async Task Invoke(HttpContext httpContext, MetricReporter reporter)
         {
+            var counter = Metrics.CreateCounter("AllWinners_total", "shows winners", new CounterConfiguration
+            {
+                LabelNames = new[] {"playerName", "timeCompleted"}
+            });
             var path = httpContext.Request.Path.Value;
             if (path == "/metrics")
             {
@@ -31,6 +38,10 @@ namespace Mars.Web
                 reporter.RegisterRequest();
                 reporter.RegisterResponseTime(httpContext.Response.StatusCode, httpContext.Request.Method, sw.Elapsed);
             }
+            counter.Labels("Bre", "1.06").Inc();
+            
+
+            await _request(httpContext);
         }
     }
 }

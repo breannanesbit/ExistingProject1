@@ -2,6 +2,7 @@ version: '3.4'
 
 services:
   mars.web:
+    container_name: marsweb
     image: ${DOCKER_REGISTRY-}marsweb
     build:
       context: .
@@ -27,6 +28,9 @@ services:
       - ~/source/repos/ExistingProject1/src/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - 9090:9090
+    networks:
+      - jaegernet
+  
 
   grafana:
     image: grafana/grafana:latest

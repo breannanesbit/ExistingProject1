@@ -38,6 +38,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\Metrics\Metric.csproj" />
 		<ProjectReference Include="..\Mars.MissionControl\Mars.MissionControl.csproj" />
 		<ProjectReference Include="..\Mars.Web.Types\Mars.Web.Types.csproj" />
 	</ItemGroup>

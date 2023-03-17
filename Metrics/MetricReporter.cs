@@ -1,21 +1,32 @@
-﻿using OpenTelemetry.Metrics;
+﻿using Microsoft.Extensions.Logging;
+//using OpenTelemetry.Metrics;
 using Prometheus;
 using System.Diagnostics.Metrics;
 
-namespace Mars.Web
+namespace Metric
 {
     public class MetricReporter
     {
         private readonly ILogger<MetricReporter> _logger;
-        private readonly Counter _requestCounter;
-        private readonly Histogram _responseTimeHistogram;
+        public Counter _requestCounter;
+        public Histogram _responseTimeHistogram;
+        public const string HttpClientName = "MetricReporterHttpClient";
 
-        public MetricReporter(ILogger<MetricReporter> logger)
+        public Counter joinedPlayers = Metrics.CreateCounter("JoinedPlayers_total", "all players that have join this game", new CounterConfiguration
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            LabelNames = new[] { "player", "gameid" }
+        });
 
+        public Counter winners = Metrics.CreateCounter("Winners_list_total", "list of winners for the current game", new CounterConfiguration
+        {
+            LabelNames = new[] { "player", "gameid", "time" }
+        });
+
+        public MetricReporter()
+        {
+        
             _requestCounter =
-                Metrics.CreateCounter("total_requests", "The total number of requests serviced by this API.");
+                Metrics.CreateCounter("Winners_total", "All winners");
 
             _responseTimeHistogram = Metrics.CreateHistogram("request_duration_seconds",
                 "The duration in seconds between the response to a request.", new Prometheus.HistogramConfiguration

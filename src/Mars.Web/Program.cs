@@ -1,8 +1,10 @@
 using Hellang.Middleware.ProblemDetails;
 using Mars.Web;
 using Mars.Web.Controllers;
+using Metric;
 using Microsoft.OpenApi.Models;
 using OpenTelemetry;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Prometheus;
@@ -59,7 +61,7 @@ builder.Services.AddSingleton<MultiGameHoster>();
 builder.Services.AddSingleton<IMapProvider, FileSystemMapProvider>();
 
 builder.Services.AddHostedService<CleanupGameService>();
-
+//builder.AddMeter(counter);
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = 429;
@@ -76,8 +78,12 @@ builder.Services.AddRateLimiter(options =>
 });
 
 //_____________________________________________________________
+var counter = Metrics.CreateCounter("total_work", "please work");
+counter.Inc();
+builder.Services.AddHttpClient(MetricReporter.HttpClientName).UseHttpClientMetrics();
 builder.Services.AddSingleton<MetricReporter>();
-builder.Services.AddControllers();
+//builder.Services.AddControllers();
+
 
 
 //--------------------------------------------------------------
@@ -99,10 +105,10 @@ app.UseSwaggerUI(c =>
 }
 //_________________________________________________________
 app.UseMetricServer();
-app.UseHttpMetrics();
+//app.UseHttpMetrics();
+
 app.UseMiddleware<ResponseMetricMiddleware>();
 
-//app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
 
 //_________________________________________________________
 

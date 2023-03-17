@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Metric;
+using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
+
 
 namespace Mars.MissionControl;
 public class Game : IDisposable
@@ -42,6 +44,8 @@ public class Game : IDisposable
     public Board Board { get; private set; }
     private Timer? rechargeTimer;
     public DateTime GameStartedOn { get; private set; }
+
+    public MetricReporter metricReporter = new MetricReporter();
     public ReadOnlyCollection<Player> Players =>
         new ReadOnlyCollection<Player>(players.Values.ToList());
     private ConcurrentQueue<Player> winners = new();
@@ -71,6 +75,10 @@ public class Game : IDisposable
         }
 
         var player = new Player(playerName);
+
+        //metric of joining players
+        metricReporter.joinedPlayers.Labels(player.Name, GameStartedOn.Date.ToString());
+
         var startingLocation = Board.PlaceNewPlayer(player);
         logger.LogInformation("New player came into existence and started at location ({x}, {y}) ", startingLocation.X, startingLocation.Y);
         player = player with
@@ -87,6 +95,8 @@ public class Game : IDisposable
             logger.LogError($"Player {player.Token.Value} couldn't be added");
             throw new PlayerAlreadyExistsException("Unable to add new player...that token already exists?!");
         }
+
+        
 
         raiseStateChange();
 

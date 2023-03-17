@@ -1,3 +1,4 @@
+using Metric;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Mars.Web;
@@ -5,6 +6,8 @@ namespace Mars.Web;
 public class GameManager
 {
     private readonly ILogger<Game> logger;
+   
+    public MetricReporter metricReporter = new MetricReporter();
 
     public GameManager(List<Map> maps, ILogger<Game> logger)
     {
@@ -64,6 +67,8 @@ public class GameManager
 
         logger.LogInformation("Starting new game with {options}", startOptions);
         Game = new Game(startOptions, logger);
+        metricReporter.RegisterRequest();
+
         GameStateChanged?.Invoke(this, EventArgs.Empty);
 
         //subscribe to new event
