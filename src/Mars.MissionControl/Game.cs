@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
 
 
+
 namespace Mars.MissionControl;
 public class Game : IDisposable
 {
@@ -12,7 +13,8 @@ public class Game : IDisposable
         {
             throw new CannotStartGameWithoutTargetsException();
         }
-
+        TimerGameStarted = new System.Timers.Timer(interval: 900000);
+        TimerGameStarted.Start();
         GameState = GameState.Joining;
         Board = new Board(startOptions.MapWithTargets.Map);
         Map = startOptions.MapWithTargets.Map;
@@ -40,6 +42,7 @@ public class Game : IDisposable
     public bool TryTranslateToken(string tokenString, out PlayerToken? token) => playerTokenCache.TryGetValue(tokenString, out token);
     private static Orientation getRandomOrientation() => (Orientation)Random.Shared.Next(0, 4);
     public GamePlayOptions? GamePlayOptions { get; private set; }
+    public System.Timers.Timer TimerGameStarted { get; set; }
     public GameState GameState { get; set; }
     public Board Board { get; private set; }
     private Timer? rechargeTimer;
@@ -78,9 +81,18 @@ public class Game : IDisposable
 
         //metric of joining players
         metricReporter.joinedPlayers.Labels(player.Name, GameStartedOn.Date.ToString());
+        metricReporter.joinedPlayers.Inc();
 
         var startingLocation = Board.PlaceNewPlayer(player);
         logger.LogInformation("New player came into existence and started at location ({x}, {y}) ", startingLocation.X, startingLocation.Y);
+
+        //metric of players that join before game status changes to playing
+        if (GameState == GameState.Joining)
+        {
+            metricReporter.playersJoinedWhenGameBeforeChangesToPlaying.Inc();
+            metricReporter.playersJoinedWhenGameBeforeChangesToPlaying.Labels(player.Name, $"({startingLocation.X} , {startingLocation.Y})");
+        }
+
         player = player with
         {
             BatteryLevel = StartingBatteryLevel,
@@ -283,6 +295,26 @@ public class Game : IDisposable
                 players.Remove(player.Token, out _);
                 player = player with { WinningTime = DateTime.Now - GameStartedOn };
                 winners.Enqueue(player);
+
+                //add to winners metrics
+                metricReporter.winners.Inc();
+                var fiveSec = 5000;
+                var fivems = TimeSpan.FromMilliseconds(fiveSec);
+                if(winners.First() == player)
+                {
+                    metricReporter.winners.Labels(player.Name, player.WinningTime.ToString(), $"First place winner, time: {player.WinningTime}");
+
+                }
+                else if(winners.Last() == player && TimerGameStarted.Enabled == false)
+                {
+                    metricReporter.winners.Labels(player.Name, player.WinningTime.ToString(), $"Last place winner, time: {player.WinningTime}");
+                }
+                else
+                {
+                    metricReporter.winners.Labels(player.Name, player.WinningTime.ToString());
+                }
+                
+                
             }
             message = GameMessages.YouMadeItToTheTarget;
         }

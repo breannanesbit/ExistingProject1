@@ -4,6 +4,8 @@ services:
   mars.web:
     container_name: marsweb
     image: ${DOCKER_REGISTRY-}marsweb
+    ports:
+      - "8080:80"
     build:
       context: .
       dockerfile: Mars.Web/Dockerfile
@@ -23,6 +25,7 @@ services:
       - ACCEPT_EULA=Y
 
   prometheus:
+    container_name: prometheus
     image: prom/prometheus:latest
     volumes:
       - ~/source/repos/ExistingProject1/src/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml

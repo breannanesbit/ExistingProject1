@@ -7,7 +7,6 @@ namespace Metric
 {
     public class MetricReporter
     {
-        private readonly ILogger<MetricReporter> _logger;
         public Counter _requestCounter;
         public Histogram _responseTimeHistogram;
         public const string HttpClientName = "MetricReporterHttpClient";
@@ -19,7 +18,12 @@ namespace Metric
 
         public Counter winners = Metrics.CreateCounter("Winners_list_total", "list of winners for the current game", new CounterConfiguration
         {
-            LabelNames = new[] { "player", "gameid", "time" }
+            LabelNames = new[] { "player", "time", "minormax" }
+        });
+
+        public Counter playersJoinedWhenGameBeforeChangesToPlaying = Metrics.CreateCounter("player_when_game_changes_to_playing_total", "number of player when game offically starts along with their information", new CounterConfiguration
+        {
+            LabelNames = new[] { "player", "gameid"}
         });
 
         public MetricReporter()
