@@ -33,6 +33,7 @@ public class Game : IDisposable
     public int IngenuityVisibilityRadius { get; }
     public int StartingBatteryLevel { get; }
     public int IngenuityStartingBatteryLevel { get; }
+    public PlayerToken FirstPlayerToken { get; set; }
 
     private readonly ILogger<Game> logger;
 
@@ -55,6 +56,7 @@ public class Game : IDisposable
     private readonly ConcurrentBag<TargetVisitation> targetVisitations = new();
 
     public IEnumerable<Player> Winners => winners.ToArray();
+    public int CountPlayers = 0;
 
     #region State Changed
     public event EventHandler? GameStateChanged;
@@ -72,12 +74,19 @@ public class Game : IDisposable
 
     public JoinResult Join(string playerName)
     {
+       
         if (GameState != GameState.Joining && GameState != GameState.Playing)
         {
             throw new InvalidGameStateException();
         }
 
         var player = new Player(playerName);
+
+        if(CountPlayers == 0)
+        {
+            FirstPlayerToken = player.Token;
+            CountPlayers++;
+        }
 
         //metric of joining players
         metricReporter.joinedPlayers.Labels(player.Name, GameStartedOn.Date.ToString());
@@ -152,6 +161,8 @@ public class Game : IDisposable
 
     public IngenuityMoveResult MoveIngenuity(PlayerToken token, Location destination, int updatePlayerTryAgainCount = 0)
     {
+
+
         if (updatePlayerTryAgainCount > 9)
         {
             throw new UnableToUpdatePlayerException();
@@ -169,6 +180,7 @@ public class Game : IDisposable
         var player = players[token];
         var unmodifiedPlayer = player;
         string? message;
+
 
         var deltaX = Math.Abs(destination.X - player.IngenuityLocation.X);
         var deltaY = Math.Abs(destination.Y - player.IngenuityLocation.Y);
@@ -202,6 +214,13 @@ public class Game : IDisposable
                 return MoveIngenuity(token, destination, updatePlayerTryAgainCount + 1);
             }
             message = GameMessages.IngenuityMoveOK;
+        }
+
+        //First Player Movement Metric
+        if(FirstPlayerToken == token)
+        {
+            metricReporter.firstPersonCopterMoves.Inc();
+            metricReporter.firstPersonCopterMoves.Labels(player.Name, player.IngenuityBatteryLevel.ToString());
         }
 
         raiseStateChange();
@@ -280,6 +299,13 @@ public class Game : IDisposable
             }
         }
 
+        //First Player Movement Metric
+        if (FirstPlayerToken == token)
+        {
+            metricReporter.firstPersonRoverMoves.Inc();
+            metricReporter.firstPersonRoverMoves.Labels(player.Name, player.BatteryLevel.ToString());
+        }
+
         if (!players.TryUpdate(token, player, unmodifiedPlayer))
         {
             logger.LogError("Recursing MoveIngenuity for {playerName} to avoid UnableToUpdatePlayerException", player.Name);
@@ -291,11 +317,6 @@ public class Game : IDisposable
             recordTargetVisitation(player);
             if (hasVisitedAllTargets(player))
             {
-                logger.LogInformation("Player {playerName} has won!", player.Name);
-                players.Remove(player.Token, out _);
-                player = player with { WinningTime = DateTime.Now - GameStartedOn };
-                winners.Enqueue(player);
-
                 //add to winners metrics
                 metricReporter.winners.Inc();
                 var fiveSec = 5000;
@@ -313,6 +334,12 @@ public class Game : IDisposable
                 {
                     metricReporter.winners.Labels(player.Name, player.WinningTime.ToString());
                 }
+
+                logger.LogInformation("Player {playerName} has won!", player.Name);
+                players.Remove(player.Token, out _);
+                player = player with { WinningTime = DateTime.Now - GameStartedOn };
+                winners.Enqueue(player);
+
                 
                 
             }

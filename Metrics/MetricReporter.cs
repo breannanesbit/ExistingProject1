@@ -20,7 +20,14 @@ namespace Metric
         {
             LabelNames = new[] { "player", "time", "minormax" }
         });
-
+        public Counter firstPersonRoverMoves = Metrics.CreateCounter("First_Player_Rover_Movement_total", "Count of moves for the first player", new CounterConfiguration
+        {
+            LabelNames = new[] {"player", "batteryLevel"}
+        });
+        public Counter firstPersonCopterMoves = Metrics.CreateCounter("First_Player_Copter_Movement_total", "Count of moves for the first player's copter", new CounterConfiguration
+        {
+            LabelNames = new[] { "player", "batteryLevel" }
+        });
         public Counter playersJoinedWhenGameBeforeChangesToPlaying = Metrics.CreateCounter("player_when_game_changes_to_playing_total", "number of player when game offically starts along with their information", new CounterConfiguration
         {
             LabelNames = new[] { "player", "gameid"}
