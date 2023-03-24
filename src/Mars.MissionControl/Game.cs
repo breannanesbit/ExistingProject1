@@ -88,13 +88,13 @@ public class Game : IDisposable
             CountPlayers++;
         }
 
-        //metric of joining players
-        metricReporter.joinedPlayers.Labels(player.Name, GameStartedOn.Date.ToString());
-        metricReporter.joinedPlayers.Inc();
 
         var startingLocation = Board.PlaceNewPlayer(player);
         logger.LogInformation("New player came into existence and started at location ({x}, {y}) ", startingLocation.X, startingLocation.Y);
 
+        //metric of joining players
+        metricReporter.joinedPlayers.Labels(player.Name, $"({startingLocation.X} , {startingLocation.Y})");
+        metricReporter.joinedPlayers.Inc();
         //metric of players that join before game status changes to playing
         if (GameState == GameState.Joining)
         {
@@ -321,6 +321,12 @@ public class Game : IDisposable
                 metricReporter.winners.Inc();
                 var fiveSec = 5000;
                 var fivems = TimeSpan.FromMilliseconds(fiveSec);
+
+                logger.LogInformation("Player {playerName} has won!", player.Name);
+                players.Remove(player.Token, out _);
+                player = player with { WinningTime = DateTime.Now - GameStartedOn };
+                winners.Enqueue(player);
+
                 if(winners.First() == player)
                 {
                     metricReporter.winners.Labels(player.Name, player.WinningTime.ToString(), $"First place winner, time: {player.WinningTime}");
@@ -334,12 +340,6 @@ public class Game : IDisposable
                 {
                     metricReporter.winners.Labels(player.Name, player.WinningTime.ToString());
                 }
-
-                logger.LogInformation("Player {playerName} has won!", player.Name);
-                players.Remove(player.Token, out _);
-                player = player with { WinningTime = DateTime.Now - GameStartedOn };
-                winners.Enqueue(player);
-
                 
                 
             }

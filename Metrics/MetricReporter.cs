@@ -13,7 +13,7 @@ namespace Metric
 
         public Counter joinedPlayers = Metrics.CreateCounter("JoinedPlayers_total", "all players that have join this game", new CounterConfiguration
         {
-            LabelNames = new[] { "player", "gameid" }
+            LabelNames = new[] { "player", "positon" }
         });
 
         public Counter winners = Metrics.CreateCounter("Winners_list_total", "list of winners for the current game", new CounterConfiguration
@@ -30,7 +30,7 @@ namespace Metric
         });
         public Counter playersJoinedWhenGameBeforeChangesToPlaying = Metrics.CreateCounter("player_when_game_changes_to_playing_total", "number of player when game offically starts along with their information", new CounterConfiguration
         {
-            LabelNames = new[] { "player", "gameid"}
+            LabelNames = new[] { "player", "position"}
         });
 
         public MetricReporter()

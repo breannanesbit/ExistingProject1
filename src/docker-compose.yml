@@ -29,6 +29,7 @@ services:
     image: prom/prometheus:latest
     volumes:
       - ~/source/repos/ExistingProject1/src/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus 
     ports:
       - 9090:9090
     networks:
@@ -39,10 +40,13 @@ services:
     image: grafana/grafana:latest
     volumes:
      - ~/source/repos/ExistingProject1/src/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yaml
+     - grafana_data:/var/lib/grafana 
     ports:
      - 3001:3000
     links:
       - prometheus
+    networks:
+      - jaegernet
 
   jaeger:
     container_name: jaeger
@@ -60,3 +64,7 @@ services:
 
 networks:
   jaegernet:
+  
+volumes:
+  grafana_data:
+  prometheus_data:
